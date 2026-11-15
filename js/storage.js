@@ -13,8 +13,8 @@
 // ⬇️ วาง Web App URL ที่ได้จาก Google Apps Script ที่นี่ (ถ้ายังไม่ใส่ จะทำงานผ่าน localStorage ตามปกติ)
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZ2RdY7ShRLpefBHDDh7tDf4gOa4AIamyhdNGgHj7gDGicC9jtl54ODf80E8eRydV30g/exec";
 
-const STORAGE_KEY = "swu_reviews";
-const PENDING_QUEUE_KEY = "swu_pending_reviews";
+const STORAGE_KEY = "swu_reviews_v2";
+const PENDING_QUEUE_KEY = "swu_pending_reviews_v2";
 
 /**
  * Returns pending reviews waiting to be synced to Google Sheets.
@@ -201,22 +201,30 @@ async function syncReviewsFromCloud(onUpdated) {
     if (!resp.ok) return;
     const cloudReviews = await resp.json();
 
-    if (Array.isArray(cloudReviews) && cloudReviews.length > 0) {
-      // ทำความสะอาดข้อความเวลาเรียนให้เป็น Hr:min - Hr:min เสมอ
-      cloudReviews.forEach(r => {
-        if (r.classSchedule) r.classSchedule = cleanScheduleString(r.classSchedule);
-      });
+    if (Array.isArray(cloudReviews)) {
+      if (cloudReviews.length > 0) {
+        // ทำความสะอาดข้อความเวลาเรียนให้เป็น Hr:min - Hr:min เสมอ
+        cloudReviews.forEach(r => {
+          if (r.classSchedule) r.classSchedule = cleanScheduleString(r.classSchedule);
+        });
 
-      // รวมรีวิวที่ส่งไปแล้วในเครื่องแต่ชีตอาจยังบันทึกไม่เสร็จ เพื่อไม่ให้รีวิวหายชั่วคราว
-      const pending = getPendingReviews();
-      const cloudIds = new Set(cloudReviews.map(r => r.reviewId));
-      const unpersistedLocal = pending.filter(p => !cloudIds.has(p.reviewId));
-      const mergedReviews = [...unpersistedLocal, ...cloudReviews];
+        // รวมรีวิวที่ส่งไปแล้วในเครื่องแต่ชีตอาจยังบันทึกไม่เสร็จ เพื่อไม่ให้รีวิวหายชั่วคราว
+        const pending = getPendingReviews();
+        const cloudIds = new Set(cloudReviews.map(r => r.reviewId));
+        const unpersistedLocal = pending.filter(p => !cloudIds.has(p.reviewId));
+        const mergedReviews = [...unpersistedLocal, ...cloudReviews];
 
-      // อัปเดตข้อมูลล่าสุดลงในแคช localStorage
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedReviews));
-      if (typeof onUpdated === "function") {
-        onUpdated(mergedReviews);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedReviews));
+        if (typeof onUpdated === "function") {
+          onUpdated(mergedReviews);
+        }
+      } else {
+        // ถ้าชีตในคลาวด์ว่างเปล่า (เช่น แอดมินเคลียร์ข้อมูลทดสอบทิ้ง)
+        const pending = getPendingReviews();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
+        if (typeof onUpdated === "function") {
+          onUpdated(pending);
+        }
       }
     }
   } catch (err) {
