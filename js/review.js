@@ -158,6 +158,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await saveReview(reviewData);
+
+      // ส่ง Event เข้า Google Analytics ว่ามีผู้ส่งรีวิวสำเร็จ
+      if (typeof gtag === "function") {
+        gtag("event", "submit_review", {
+          course_id: reviewData.course_id || reviewData.course_code,
+          course_name: reviewData.name_th,
+          faculty: reviewData.faculty,
+        });
+      }
+
       showSuccess();
     } catch (err) {
       console.warn("Failed to save review:", err);
