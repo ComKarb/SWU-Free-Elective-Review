@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 8. Written review
     const wr = form.writtenReview;
     if (!wr.value.trim()) {
-      markError(wr, "กรุณาเขียนรีวิวเพื่อแบ่งปันประสบการณ์");
+      markError(wr, "กรุณาเขียนรีวิวเพื่อแบ่งปันประสบการณ์ (ขอความร่วมมือรีวิวอย่างสุภาพและสร้างสรรค์)");
     } else {
       clearError(wr);
     }
