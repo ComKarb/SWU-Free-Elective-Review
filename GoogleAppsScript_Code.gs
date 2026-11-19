@@ -63,14 +63,30 @@ function doGet(e) {
       learningFormat:   findCol(headers, ["learningformat", "format", "รูปแบบ"]),
       classSchedule:    findCol(headers, ["classschedule", "schedule", "ตารางเรียน", "เวลาเรียน", "ช่วงเวลา"], [tsCol]),
       attendance:       findCol(headers, ["attendance", "เช็คชื่อ"]),
-      ratingContent:    findCol(headers, ["contentclarity", "ความเข้าใจ", "เนื้อหา"]),
-      ratingWorkload:   findCol(headers, ["workload", "ปริมาณงาน", "ภาระงาน"]),
-      ratingExam:       findCol(headers, ["examease", "ข้อสอบ", "การสอบ"]),
-      ratingInstructor: findCol(headers, ["instructorkindness", "อาจารย์", "ผู้สอน"]),
-      ratingGrading:    findCol(headers, ["gradingease", "เกรด", "ตัดเกรด"]),
+      ratingContent:    findCol(headers, ["contentclarity", "ความเข้าใจง่าย", "ความเข้าใจ", "เนื้อหา"]),
+      ratingWorkload:   findCol(headers, ["workloadappropriateness", "ความเหมาะสมงาน", "ความเหมาะสมของปริมาณงาน", "ความเหมาะสม", "ปริมาณงาน", "ภาระงาน", "workload", "การบ้าน"]),
+      ratingExam:       findCol(headers, ["examease", "ความง่ายข้อสอบ", "ความง่ายของข้อสอบ", "ข้อสอบ", "การสอบ", "exam"]),
+      ratingInstructor: findCol(headers, ["instructorkindness", "ความใจดีอาจารย์", "ความใจดีของอาจารย์", "ความใจดี", "อาจารย์", "ผู้สอน", "instructor"]),
+      ratingGrading:    findCol(headers, ["gradingease", "ความง่ายการให้เกรด", "ความง่ายของการให้เกรด", "การให้เกรด", "ตัดเกรด", "เกรด", "grading"]),
       writtenReview:    findCol(headers, ["writtenreview", "รีวิวจากผู้เรียน", "รีวิว", "ความคิดเห็น", "ประสบการณ์"]),
       reviewId:         findCol(headers, ["reviewid", "รหัสอ้างอิง", "id"])
     };
+
+    // Fallback ป้องกันหัวตารางไม่ตรง: หากเจอ "ความเข้าใจง่าย" แต่ไม่พบคอลัมน์คะแนนอื่น ให้ใช้ตำแหน่งคอลัมน์ถัดไปต่อเนื่องกัน 5 ช่อง
+    if (colMap.ratingContent !== -1) {
+      if (colMap.ratingWorkload === -1 && colMap.ratingContent + 1 < headers.length) {
+        colMap.ratingWorkload = colMap.ratingContent + 1;
+      }
+      if (colMap.ratingExam === -1 && colMap.ratingContent + 2 < headers.length) {
+        colMap.ratingExam = colMap.ratingContent + 2;
+      }
+      if (colMap.ratingInstructor === -1 && colMap.ratingContent + 3 < headers.length) {
+        colMap.ratingInstructor = colMap.ratingContent + 3;
+      }
+      if (colMap.ratingGrading === -1 && colMap.ratingContent + 4 < headers.length) {
+        colMap.ratingGrading = colMap.ratingContent + 4;
+      }
+    }
 
     var reviews = [];
 
@@ -414,7 +430,10 @@ function findCol(headers, keywords, excludeIndices) {
 }
 
 function parseScore(val) {
-  var num = parseInt(val, 10);
+  if (val === null || val === undefined) return 5;
+  var s = String(val).trim();
+  if (s === "") return 5;
+  var num = parseInt(s, 10);
   if (isNaN(num) || num < 1) return 5;
   if (num > 5) return 5;
   return num;
